@@ -1,185 +1,212 @@
 package com.platformer;
 
-import java.util.Iterator;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.TimeUtils;
+import com.platformer.World.WorldListener;
 
-public class GameScreen implements Screen {
+public class GameScreen extends ScreenAdapter {
+	static final int GAME_READY = 0;
+	static final int GAME_RUNNING = 1;
+	static final int GAME_PAUSED = 2;
+	static final int GAME_LEVEL_END = 3;
+	static final int GAME_OVER = 4;
 
-	final MyGame game;
-	
-	Texture avatarImage;
-	Texture grassImage;
-	//Sound dropSound;
-	//Music rainMusic;
-	OrthographicCamera camera;
-	Rectangle bucket;
-	Array<Rectangle> raindrops;
-	long lastDropTime;
-	int dropsGathered;
-	
-	public GameScreen(final MyGame game) {
+	MyGame game;
+
+	int state;
+	OrthographicCamera guiCam;
+	Vector3 touchPoint;
+	World world;
+	WorldListener worldListener;
+	WorldRenderer renderer;
+	Rectangle pauseBounds;
+	Rectangle resumeBounds;
+	Rectangle quitBounds;
+	int lastScore;
+	String scoreString;
+
+	GlyphLayout glyphLayout = new GlyphLayout();
+
+	public GameScreen (MyGame game) {
 		this.game = game;
+
+		state = GAME_READY;
+		guiCam = new OrthographicCamera(320, 480);
+		guiCam.position.set(320 / 2, 480 / 2, 0);
+		touchPoint = new Vector3();
 		
-		// load the images for the droplet and the bucket, 64x64 pixels each
-		grassImage = new Texture(Gdx.files.internal("grass.png"));
-		avatarImage = new Texture(Gdx.files.internal("avatar.png"));
-
-		// load the drop sound effect and the rain background "music"
-		//dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
-		//rainMusic = Gdx.audio.newMusic(Gdx.files.internal("rain.mp3"));
-		//rainMusic.setLooping(true);
-
-		// create the camera and the SpriteBatch
-		camera = new OrthographicCamera();
-		camera.setToOrtho(false, 1280, 960);
-
-		// create a Rectangle to logically represent the bucket
-		bucket = new Rectangle();
-		bucket.x = 1280 / 2 - 254 / 2; // center the bucket horizontally
-		bucket.y = 20; // bottom left corner of the bucket is 20 pixels above
-								// the bottom screen edge
-		bucket.width = 254;
-		bucket.height = 240;
-
-		// create the raindrops array and spawn the first raindrop
-		raindrops = new Array<Rectangle>();
-		spawnRaindrop();
-	}
-	
-	private void spawnRaindrop() {
-		Rectangle raindrop = new Rectangle();
-		raindrop.x = MathUtils.random(0, 1280 - 256);
-		raindrop.y = 960;
-		raindrop.width = 256;
-		raindrop.height = 256;
-		raindrops.add(raindrop);
-		lastDropTime = TimeUtils.nanoTime();
-	}
-
-	@Override
-	public void show() {
-		// start the playback of the background music
-		// when the screen is shown
-		//rainMusic.play();
-	}
-
-	@Override
-	public void render(float delta) {
-		// clear the screen with a dark blue color. The
-		// arguments to clear are the red, green
-		// blue and alpha component in the range [0,1]
-		// of the color to be used to clear the screen.
-		ScreenUtils.clear(0, 0, 0.2f, 1);
-
-		// tell the camera to update its matrices.
-		camera.update();
-
-		// tell the SpriteBatch to render in the
-		// coordinate system specified by the camera.
-		game.batch.setProjectionMatrix(camera.combined);
-
-		// begin a new batch and draw the bucket and
-		// all drops
-		game.batch.begin();
-		
-		//game.font.draw(game.batch, "Drops Collected: " + dropsGathered, 0, 480);
-		game.batch.draw(avatarImage, bucket.x, bucket.y, bucket.width, bucket.height);
-		for (Rectangle raindrop : raindrops) {
-			game.batch.draw(grassImage, raindrop.x, raindrop.y);
-		}
-		
-		game.batch.end();
-
-		// process user input
-		if (Gdx.input.isTouched()) {
-			Vector3 touchPos = new Vector3();
-			touchPos.set(Gdx.input.getX(), Gdx.input.getY(), 0);
-			camera.unproject(touchPos);
-			bucket.x = touchPos.x - 64 / 2;
-		}
-		
-		if (Gdx.input.isKeyPressed(Keys.LEFT))
-			bucket.x -= 200 * Gdx.graphics.getDeltaTime();
-		
-		if (Gdx.input.isKeyPressed(Keys.RIGHT))
-			bucket.x += 200 * Gdx.graphics.getDeltaTime();
-
-		// make sure the bucket stays within the screen bounds
-		if (bucket.x < 0)
-			bucket.x = 0;
-		
-		if (bucket.x > 1280 - 254)
-			bucket.x = 1280 - 254;
-
-		// check if we need to create a new raindrop
-		if (TimeUtils.nanoTime() - lastDropTime > 1000000000)
-			spawnRaindrop();
-
-		// move the raindrops, remove any that are beneath the bottom edge of
-		// the screen or that hit the bucket. In the later case we increase the
-		// value our drops counter and add a sound effect.
-		Iterator<Rectangle> iter = raindrops.iterator();
-		while (iter.hasNext()) {
-			Rectangle raindrop = iter.next();
-			raindrop.y -= 200 * Gdx.graphics.getDeltaTime();
-			if (raindrop.y + 256 < 0)
-				iter.remove();
-			
-			if (raindrop.overlaps(bucket)) {
-				dropsGathered++;
-				//dropSound.play();
-				iter.remove();
+		worldListener = new WorldListener() {
+			@Override
+			public void jump () {
+				Assets.playSound(Assets.jumpSound);
 			}
-			
+
+			@Override
+			public void hit () {
+				Assets.playSound(Assets.hitSound);
+			}
+		};
+		
+		world = new World(worldListener);
+		renderer = new WorldRenderer(game.batch, world);
+		pauseBounds = new Rectangle(320 - 64, 480 - 64, 64, 64);
+		resumeBounds = new Rectangle(160 - 96, 240, 192, 36);
+		quitBounds = new Rectangle(160 - 96, 240 - 36, 192, 36);
+		lastScore = 0;
+		scoreString = "SCORE: 0";
+	}
+
+	public void update (float deltaTime) {
+		if (deltaTime > 0.1f) deltaTime = 0.1f;
+
+		switch (state) {
+		case GAME_READY:
+			updateReady();
+			break;
+		case GAME_RUNNING:
+			updateRunning(deltaTime);
+			break;
+		case GAME_PAUSED:
+			updatePaused();
+			break;
+		case GAME_LEVEL_END:
+			updateLevelEnd();
+			break;
+		case GAME_OVER:
+			updateGameOver();
+			break;
 		}
+	}
 
+	private void updateReady () {
+		if (Gdx.input.justTouched()) {
+			state = GAME_RUNNING;
+		}
+	}
+
+	private void updateRunning (float deltaTime) {
+		if (Gdx.input.justTouched()) {
+			guiCam.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
+
+			if (pauseBounds.contains(touchPoint.x, touchPoint.y)) {
+				Assets.playSound(Assets.clickSound);
+				state = GAME_PAUSED;
+				return;
+			}
+		}
+		
+		float accel = 0;
+		if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT)) accel = 5f;
+		if (Gdx.input.isKeyPressed(Keys.DPAD_RIGHT)) accel = -5f;
+		world.update(deltaTime, accel);
+		
+		if (world.score != lastScore) {
+			lastScore = world.score;
+			scoreString = "SCORE: " + lastScore;
+		}
+		if (world.state == World.WORLD_STATE_NEXT_LEVEL) {
+			game.setScreen(new WinScreen(game));
+		}
+		if (world.state == World.WORLD_STATE_GAME_OVER) {
+			state = GAME_OVER;
+			scoreString = "SCORE: " + lastScore;
+		}
+	}
+
+	private void updatePaused () {
+		if (Gdx.input.justTouched()) {
+			guiCam.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
+
+			if (resumeBounds.contains(touchPoint.x, touchPoint.y)) {
+				Assets.playSound(Assets.clickSound);
+				state = GAME_RUNNING;
+				return;
+			}
+
+			if (quitBounds.contains(touchPoint.x, touchPoint.y)) {
+				Assets.playSound(Assets.clickSound);
+				game.setScreen(new MainMenuScreen(game));
+				return;
+			}
+		}
+	}
+
+	private void updateLevelEnd () {
+		if (Gdx.input.justTouched()) {
+			world = new World(worldListener);
+			renderer = new WorldRenderer(game.batch, world);
+			world.score = lastScore;
+			state = GAME_READY;
+		}
+	}
+
+	private void updateGameOver () {
+		if (Gdx.input.justTouched()) {
+			game.setScreen(new MainMenuScreen(game));
+		}
+	}
+
+	public void draw () {
+		GL20 gl = Gdx.gl;
+		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+		renderer.render();
+
+		guiCam.update();
+		game.batch.setProjectionMatrix(guiCam.combined);
+		game.batch.enableBlending();
+		game.batch.begin();
+		switch (state) {
+		case GAME_READY:
+			presentReady();
+			break;
+		case GAME_RUNNING:
+			presentRunning();
+			break;
+		case GAME_PAUSED:
+			presentPaused();
+			break;
+		case GAME_OVER:
+			presentGameOver();
+			break;
+		}
+		game.batch.end();
+	}
+
+	private void presentReady () {
+		game.batch.draw(Assets.ready, 160 - 192 / 2, 240 - 32 / 2, 192, 32);
+	}
+
+	private void presentRunning () {
+		game.batch.draw(Assets.pause, 320 - 64, 480 - 64, 64, 64);
+		Assets.font.draw(game.batch, scoreString, 16, 480 - 20);
+	}
+
+	private void presentPaused () {
+		game.batch.draw(Assets.pauseMenu, 160 - 192 / 2, 240 - 96 / 2, 192, 96);
+		Assets.font.draw(game.batch, scoreString, 16, 480 - 20);
+	}
+
+	private void presentGameOver () {
+		game.batch.draw(Assets.gameOver, 160 - 160 / 2, 240 - 96 / 2, 160, 96);
+		glyphLayout.setText(Assets.font, scoreString);
+		Assets.font.draw(game.batch, scoreString, 160 - glyphLayout.width / 2, 480 - 20);
 	}
 
 	@Override
-	public void resize(int width, int height) {
-		// TODO Auto-generated method stub
-
+	public void render (float delta) {
+		update(delta);
+		draw();
 	}
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-
+	public void pause () {
+		if (state == GAME_RUNNING) state = GAME_PAUSED;
 	}
-
-	
-	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void dispose() {
-		grassImage.dispose();
-		avatarImage.dispose();
-		//dropSound.dispose();
-		//rainMusic.dispose();
-
-	}
-
 }

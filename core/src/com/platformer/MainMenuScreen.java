@@ -1,75 +1,71 @@
 package com.platformer;
 
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
 
-public class MainMenuScreen implements Screen {
+public class MainMenuScreen extends ScreenAdapter {
+	MyGame game;
+	OrthographicCamera guiCam;
+	Rectangle soundBounds;
+	Rectangle playBounds;
+	Vector3 touchPoint;
 
-	final MyGame game;
-	
-	OrthographicCamera camera;
-	
-	public MainMenuScreen(final MyGame game) {
+	public MainMenuScreen (MyGame game) {
 		this.game = game;
-		
-		camera = new OrthographicCamera();
-		camera.setToOrtho(false);
+
+		guiCam = new OrthographicCamera(320, 480);
+		guiCam.position.set(320 / 2, 480 / 2, 0);
+		soundBounds = new Rectangle(0, 0, 64, 64);
+		playBounds = new Rectangle(160 - 150, 200 + 18, 300, 36);
+		touchPoint = new Vector3();
 	}
 
-	@Override
-	public void render(float delta) {
-		ScreenUtils.clear(0, 0, 0.2f, 1);
+	public void update () {
+		if (Gdx.input.justTouched()) {
+			guiCam.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
 
-		camera.update();
-		game.batch.setProjectionMatrix(camera.combined);
-
-		game.batch.begin();
-		game.font.draw(game.batch, "Welcome to Platformer", 250, 200);
-		game.font.draw(game.batch, "Click anywhere to begin!", 250, 150);
-		game.batch.end();
-
-		if (Gdx.input.isTouched()) {
-			game.setScreen(new GameScreen(game));
-			dispose();
+			if (playBounds.contains(touchPoint.x, touchPoint.y)) {
+				Assets.playSound(Assets.clickSound);
+				game.setScreen(new GameScreen(game));
+				return;
+			}
+			if (soundBounds.contains(touchPoint.x, touchPoint.y)) {
+				Assets.playSound(Assets.clickSound);
+			}
 		}
 	}
 
-	@Override
-	public void show() {
-		// TODO Auto-generated method stub
-		
+	public void draw () {
+		GL20 gl = Gdx.gl;
+		gl.glClearColor(1, 0, 0, 1);
+		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		guiCam.update();
+		game.batch.setProjectionMatrix(guiCam.combined);
+
+		game.batch.disableBlending();
+		game.batch.begin();
+		game.batch.draw(Assets.backgroundRegion, 0, 0, 320, 480);
+		game.batch.end();
+
+		game.batch.enableBlending();
+		game.batch.begin();
+		game.batch.draw(Assets.logo, 160 - 274 / 2, 480 - 10 - 142, 274, 142);
+		game.batch.draw(Assets.mainMenu, 10, 200 - 110 / 2, 300, 110);
+		game.batch.draw(Assets.soundOn, 0, 0, 64, 64);
+		game.batch.end();	
 	}
 
 	@Override
-	public void resize(int width, int height) {
-		// TODO Auto-generated method stub
-		
+	public void render (float delta) {
+		update();
+		draw();
 	}
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-		
+	public void pause () {
 	}
-
-	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void dispose() {
-		// TODO Auto-generated method stub
-		
-	}
-
 }
