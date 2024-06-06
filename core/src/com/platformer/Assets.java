@@ -21,7 +21,10 @@ public class Assets {
 	public static TextureRegion soundOff;
 	public static TextureRegion arrow;
 	public static TextureRegion pause;
-	public static TextureRegion bobHit;
+	public static TextureRegion avaDefault;
+	public static TextureRegion avaHit;
+	public static TextureRegion avaJump;
+	public static TextureRegion avaFall;
 	public static TextureRegion platform;
 	public static BitmapFont font;
 
@@ -49,7 +52,10 @@ public class Assets {
 		soundOn = new TextureRegion(items, 64, 0, 64, 64);
 		arrow = new TextureRegion(items, 0, 64, 64, 64);
 		pause = new TextureRegion(items, 64, 64, 64, 64);
-		bobHit = new TextureRegion(items, 128, 128, 32, 32);
+		avaDefault = new TextureRegion(items, 160, 128, 32, 32); 
+		avaHit = new TextureRegion(items, 128, 128, 32, 32);
+		avaJump = new TextureRegion(items, 0, 128, 32, 32); // first frame of jump
+		avaFall = new TextureRegion(items, 64, 128, 32, 32); // first frame of fall
 		platform = new TextureRegion(items, 64, 160, 64, 16);
 		
 		font = new BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"), false);

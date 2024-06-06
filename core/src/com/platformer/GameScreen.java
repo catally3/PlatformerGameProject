@@ -25,9 +25,16 @@ public class GameScreen extends ScreenAdapter {
 	World world;
 	WorldListener worldListener;
 	WorldRenderer renderer;
+	
+	/** pause button boundaries */
 	Rectangle pauseBounds;
+	
+	/** resume button boundaries */
 	Rectangle resumeBounds;
+	
+	/** quit button boundaries */
 	Rectangle quitBounds;
+	
 	int lastScore;
 	String scoreString;
 

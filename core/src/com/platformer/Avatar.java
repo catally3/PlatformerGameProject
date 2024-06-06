@@ -2,20 +2,19 @@ package com.platformer;
 
 public class Avatar extends DynamicGameObject {
 
-	public static final int STATE_JUMP = 0;
-	public static final int STATE_FALL = 1;
-	public static final int STATE_HIT = 2;
 	public static final float JUMP_VELOCITY = 11;
 	public static final float MOVE_VELOCITY = 20;
 	public static final float WIDTH = 0.8f;
 	public static final float HEIGHT = 0.8f;
 
-	int state;
+	private boolean hit = false;
+	private boolean falling = false;
+	private boolean jumping = false;
 	float stateTime;
 	
 	public Avatar(float x, float y) {
 		super(x, y, WIDTH, HEIGHT);
-		state = STATE_FALL;
+		falling = true;
 		stateTime = 0;
 	}
 	
@@ -25,16 +24,18 @@ public class Avatar extends DynamicGameObject {
 		bounds.x = position.x - bounds.width / 2;
 		bounds.y = position.y - bounds.height / 2;
 
-		if (velocity.y > 0 && state != STATE_HIT) {
-			if (state != STATE_JUMP) {
-				state = STATE_JUMP;
+		if (velocity.y > 0 && !hit) {
+			if (!jumping) {
+				jumping = true;
+				falling = false;
 				stateTime = 0;
 			}
 		}
 
-		if (velocity.y < 0 && state != STATE_HIT) {
-			if (state != STATE_FALL) {
-				state = STATE_FALL;
+		if (velocity.y < 0 && !hit) {
+			if (!falling) {
+				falling = true;
+				jumping = false;
 				stateTime = 0;
 			}
 		}
@@ -47,8 +48,21 @@ public class Avatar extends DynamicGameObject {
 	
 	public void hitPlatform () {
 		velocity.y = JUMP_VELOCITY;
-		state = STATE_JUMP;
+		jumping = true;
+		falling = false;
 		stateTime = 0;
+	}
+	
+	public boolean isHit () {
+		return hit;
+	}
+	
+	public boolean isJumping() {
+		return jumping;
+	}
+	
+	public boolean isFalling() {
+		return falling;
 	}
 
 }

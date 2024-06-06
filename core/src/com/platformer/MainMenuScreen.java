@@ -10,8 +10,13 @@ import com.badlogic.gdx.math.Vector3;
 public class MainMenuScreen extends ScreenAdapter {
 	MyGame game;
 	OrthographicCamera guiCam;
+	
+	/** this is the boundaries of the mute sound button*/
 	Rectangle soundBounds;
+	
+	/** this is the boundaries of the play button*/
 	Rectangle playBounds;
+	
 	Vector3 touchPoint;
 
 	public MainMenuScreen (MyGame game) {
@@ -28,6 +33,7 @@ public class MainMenuScreen extends ScreenAdapter {
 		if (Gdx.input.justTouched()) {
 			guiCam.unproject(touchPoint.set(Gdx.input.getX(), Gdx.input.getY(), 0));
 
+			//if the touchpoint is within the play button, begin gamescreen
 			if (playBounds.contains(touchPoint.x, touchPoint.y)) {
 				Assets.playSound(Assets.clickSound);
 				game.setScreen(new GameScreen(game));

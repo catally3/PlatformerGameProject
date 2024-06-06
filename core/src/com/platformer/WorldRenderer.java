@@ -20,7 +20,7 @@ public class WorldRenderer {
 	}
 
 	public void render () {
-		if (world.bob.position.y > cam.position.y) cam.position.y = world.bob.position.y;
+		if (world.ava.position.y > cam.position.y) cam.position.y = world.ava.position.y;
 		cam.update();
 		batch.setProjectionMatrix(cam.combined);
 		renderBackground();
@@ -45,16 +45,23 @@ public class WorldRenderer {
 
 	private void renderBob () {
 		TextureRegion keyFrame;
-		switch (world.bob.state) {
-		case Avatar.STATE_HIT:
-		default:
-			keyFrame = Assets.bobHit;
+		if (world.ava.isHit()) {
+			keyFrame = Assets.avaHit;
+		}	
+		else if (world.ava.isFalling()) {
+			keyFrame = Assets.avaFall;
 		}
-		float side = world.bob.velocity.x < 0 ? -1 : 1;
+		else if (world.ava.isJumping()) {
+			keyFrame = Assets.avaJump;
+		}
+		else {
+			keyFrame = Assets.avaDefault;
+		}
+		float side = world.ava.velocity.x < 0 ? -1 : 1;
 		if (side < 0)
-			batch.draw(keyFrame, world.bob.position.x + 0.5f, world.bob.position.y - 0.5f, side * 1, 1);
+			batch.draw(keyFrame, world.ava.position.x + 0.5f, world.ava.position.y - 0.5f, side * 1, 1);
 		else
-			batch.draw(keyFrame, world.bob.position.x - 0.5f, world.bob.position.y - 0.5f, side * 1, 1);
+			batch.draw(keyFrame, world.ava.position.x - 0.5f, world.ava.position.y - 0.5f, side * 1, 1);
 	}
 
 	private void renderPlatforms () {
