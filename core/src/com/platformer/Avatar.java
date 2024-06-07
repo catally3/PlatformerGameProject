@@ -22,7 +22,6 @@ public class Avatar extends DynamicGameObject {
 			velocity.add(0, World.gravity.y * deltaTime);
 			position.add(0, velocity.y * deltaTime);
 			bounds.y = position.y - bounds.height / 2;
-			System.out.println(deltaTime);
 		}
 		velocity.add(World.gravity.x * deltaTime, 0);
 		position.add(velocity.x * deltaTime, 0);

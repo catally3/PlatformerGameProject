@@ -136,7 +136,7 @@ public class GameScreen extends ScreenAdapter {
 	}
 
 	private void updateGameOver () {
-		if (Gdx.input.justTouched()) {
+		if (Gdx.input.justTouched() || Gdx.input.isKeyJustPressed(Keys.ANY_KEY)) {
 			game.setScreen(new MainMenuScreen(game));
 		}
 	}
