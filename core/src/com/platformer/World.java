@@ -16,9 +16,6 @@ public class World {
 
 	public static final float WORLD_WIDTH = 10;
 	public static final float WORLD_HEIGHT = 15 * 20;
-	public static final int WORLD_STATE_RUNNING = 0;
-	public static final int WORLD_STATE_NEXT_LEVEL = 1;
-	public static final int WORLD_STATE_GAME_OVER = 2;
 	public static final Vector2 gravity = new Vector2(0, -12);
 
 	public final Avatar ava;
@@ -28,7 +25,9 @@ public class World {
 
 	public float heightSoFar;
 	public int score;
-	public int state;
+	public boolean worldRunning = false;
+	public boolean gameOver = false;
+	public boolean nextLevel = false;
 
 	public World (WorldListener listener) {
 		this.ava = new Avatar(5, 1);
@@ -39,7 +38,7 @@ public class World {
 
 		this.heightSoFar = 0;
 		this.score = 0;
-		this.state = WORLD_STATE_RUNNING;
+		worldRunning = true;
 	}
 
 	private void generateLevel () {
@@ -58,28 +57,36 @@ public class World {
 
 	}
 
-	public void update (float deltaTime, float accelX) {
-		updateAva(deltaTime, accelX);
+	public void update (float deltaTime, float accelX, boolean up) {
+		updateAva(deltaTime, accelX, up);
 		updatePlatforms(deltaTime);
 		if (!ava.isHit()) checkCollisions();
 		checkGameOver();
 	}
 
-	private void updateAva (float deltaTime, float accelX) {
-		if (!ava.isHit() && ava.position.y <= 0.5f) ava.hitPlatform();
-		if (!ava.isHit()) ava.velocity.x = -accelX / 10 * Avatar.MOVE_VELOCITY;
+	private void updateAva (float deltaTime, float accelX, boolean up) {
+		if (!ava.isHit() && ava.position.y <= 0.5f) {
+			ava.hitPlatform();
+		}
+		if (!ava.isHit()) {
+			ava.velocity.x = -accelX / 10 * Avatar.MOVE_VELOCITY;
+			if (up && !ava.isFalling() && !ava.isJumping()) {
+				ava.jump();
+				listener.jump();
+			}
+		}
 		ava.update(deltaTime);
 		heightSoFar = Math.max(ava.position.y, heightSoFar);
 	}
 
 	private void updatePlatforms (float deltaTime) {
-		int len = platforms.size();
-		for (int i = 0; i < len; i++) {
+		int length = platforms.size();
+		for (int i = 0; i < length; i++) {
 			Platform platform = platforms.get(i);
 			platform.update(deltaTime);
 			if (platform.state == Platform.STATE_PULVERIZING && platform.stateTime > Platform.PLATFORM_PULVERIZE_TIME) {
 				platforms.remove(platform);
-				len = platforms.size();
+				length = platforms.size();
 			}
 		}
 	}
@@ -89,27 +96,31 @@ public class World {
 	}
 
 	private void checkPlatformCollisions () {
+		//if ava still rising, return immediately
 		if (ava.velocity.y > 0) return;
-
-		int len = platforms.size();
-		for (int i = 0; i < len; i++) {
-			Platform platform = platforms.get(i);
-			if (ava.position.y > platform.position.y) {
-				if (ava.bounds.overlaps(platform.bounds)) {
-					ava.hitPlatform();
-					listener.jump();
-					if (rand.nextFloat() > 0.5f) {
-						platform.pulverize();
-					}
-					break;
-				}
+		
+		boolean onPlatform = false;
+		
+		for (Platform p : platforms) {
+			if ((ava.position.y > p.position.y) && ava.bounds.overlaps(p.bounds)) {	
+				ava.hitPlatform();
+				onPlatform = true;
+				
+				// 50% to pulverize platform
+				if (rand.nextFloat() > 0.5f) p.pulverize();
+				
+				break;
 			}
+		}
+		
+		if (ava.velocity.y == 0 && !onPlatform) {
+			ava.fall();
 		}
 	}
 
 	private void checkGameOver () {
 		if (heightSoFar - 7.5f > ava.position.y) {
-			state = WORLD_STATE_GAME_OVER;
+			gameOver = true;
 		}
 	}
 

@@ -11,15 +11,12 @@ import com.badlogic.gdx.math.Vector3;
 import com.platformer.World.WorldListener;
 
 public class GameScreen extends ScreenAdapter {
-	static final int GAME_READY = 0;
-	static final int GAME_RUNNING = 1;
-	static final int GAME_PAUSED = 2;
-	static final int GAME_LEVEL_END = 3;
-	static final int GAME_OVER = 4;
-
 	MyGame game;
 
-	int state;
+	boolean gameRunning = false;
+	boolean gamePaused = false;
+	boolean levelEnded = false;
+	boolean gameOver = false;
 	OrthographicCamera guiCam;
 	Vector3 touchPoint;
 	World world;
@@ -43,7 +40,6 @@ public class GameScreen extends ScreenAdapter {
 	public GameScreen (MyGame game) {
 		this.game = game;
 
-		state = GAME_READY;
 		guiCam = new OrthographicCamera(320, 480);
 		guiCam.position.set(320 / 2, 480 / 2, 0);
 		touchPoint = new Vector3();
@@ -72,28 +68,12 @@ public class GameScreen extends ScreenAdapter {
 	public void update (float deltaTime) {
 		if (deltaTime > 0.1f) deltaTime = 0.1f;
 
-		switch (state) {
-		case GAME_READY:
-			updateReady();
-			break;
-		case GAME_RUNNING:
-			updateRunning(deltaTime);
-			break;
-		case GAME_PAUSED:
-			updatePaused();
-			break;
-		case GAME_LEVEL_END:
-			updateLevelEnd();
-			break;
-		case GAME_OVER:
-			updateGameOver();
-			break;
-		}
-	}
-
-	private void updateReady () {
-		if (Gdx.input.justTouched()) {
-			state = GAME_RUNNING;
+		if (gameRunning) updateRunning(deltaTime);
+		else if (gamePaused) updatePaused();
+		else if (levelEnded) updateLevelEnd();
+		else if (gameOver) updateGameOver();
+		else if (Gdx.input.justTouched() || Gdx.input.isKeyJustPressed(Keys.ANY_KEY)) {
+			gameRunning = true;
 		}
 	}
 
@@ -103,25 +83,27 @@ public class GameScreen extends ScreenAdapter {
 
 			if (pauseBounds.contains(touchPoint.x, touchPoint.y)) {
 				Assets.playSound(Assets.clickSound);
-				state = GAME_PAUSED;
+				gamePaused = true; gameRunning = false;
 				return;
 			}
 		}
 		
 		float accel = 0;
+		boolean up = false;
 		if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT)) accel = 5f;
 		if (Gdx.input.isKeyPressed(Keys.DPAD_RIGHT)) accel = -5f;
-		world.update(deltaTime, accel);
+		up = Gdx.input.isKeyPressed(Keys.DPAD_UP) || Gdx.input.isKeyPressed(Keys.SPACE);
+		world.update(deltaTime, accel, up);
 		
 		if (world.score != lastScore) {
 			lastScore = world.score;
 			scoreString = "SCORE: " + lastScore;
 		}
-		if (world.state == World.WORLD_STATE_NEXT_LEVEL) {
+		if (world.nextLevel) {
 			game.setScreen(new WinScreen(game));
 		}
-		if (world.state == World.WORLD_STATE_GAME_OVER) {
-			state = GAME_OVER;
+		if (world.gameOver) {
+			gameOver = true; gameRunning = false;
 			scoreString = "SCORE: " + lastScore;
 		}
 	}
@@ -132,7 +114,7 @@ public class GameScreen extends ScreenAdapter {
 
 			if (resumeBounds.contains(touchPoint.x, touchPoint.y)) {
 				Assets.playSound(Assets.clickSound);
-				state = GAME_RUNNING;
+				gameRunning = true; gamePaused = false;
 				return;
 			}
 
@@ -149,7 +131,7 @@ public class GameScreen extends ScreenAdapter {
 			world = new World(worldListener);
 			renderer = new WorldRenderer(game.batch, world);
 			world.score = lastScore;
-			state = GAME_READY;
+			gameRunning = false; levelEnded = false;
 		}
 	}
 
@@ -169,20 +151,10 @@ public class GameScreen extends ScreenAdapter {
 		game.batch.setProjectionMatrix(guiCam.combined);
 		game.batch.enableBlending();
 		game.batch.begin();
-		switch (state) {
-		case GAME_READY:
-			presentReady();
-			break;
-		case GAME_RUNNING:
-			presentRunning();
-			break;
-		case GAME_PAUSED:
-			presentPaused();
-			break;
-		case GAME_OVER:
-			presentGameOver();
-			break;
-		}
+		if (gameRunning) presentRunning();
+		else if (gamePaused) presentPaused();
+		else if (gameOver) presentGameOver();
+		else presentReady();
 		game.batch.end();
 	}
 
@@ -214,6 +186,8 @@ public class GameScreen extends ScreenAdapter {
 
 	@Override
 	public void pause () {
-		if (state == GAME_RUNNING) state = GAME_PAUSED;
+		if (gameRunning) {
+			gamePaused = true; gameRunning = false;
+		}
 	}
 }

@@ -38,12 +38,12 @@ public class WorldRenderer {
 	public void renderObjects () {
 		batch.enableBlending();
 		batch.begin();
-		renderBob();
+		renderAva();
 		renderPlatforms();
 		batch.end();
 	}
 
-	private void renderBob () {
+	private void renderAva() {
 		TextureRegion keyFrame;
 		if (world.ava.isHit()) {
 			keyFrame = Assets.avaHit;

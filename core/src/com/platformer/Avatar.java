@@ -14,42 +14,63 @@ public class Avatar extends DynamicGameObject {
 	
 	public Avatar(float x, float y) {
 		super(x, y, WIDTH, HEIGHT);
-		falling = true;
 		stateTime = 0;
 	}
 	
 	public void update (float deltaTime) {
-		velocity.add(World.gravity.x * deltaTime, World.gravity.y * deltaTime);
-		position.add(velocity.x * deltaTime, velocity.y * deltaTime);
+		if (falling || jumping) {
+			velocity.add(0, World.gravity.y * deltaTime);
+			position.add(0, velocity.y * deltaTime);
+			bounds.y = position.y - bounds.height / 2;
+			System.out.println(deltaTime);
+		}
+		velocity.add(World.gravity.x * deltaTime, 0);
+		position.add(velocity.x * deltaTime, 0);
 		bounds.x = position.x - bounds.width / 2;
-		bounds.y = position.y - bounds.height / 2;
+		
 
-		if (velocity.y > 0 && !hit) {
-			if (!jumping) {
-				jumping = true;
-				falling = false;
-				stateTime = 0;
-			}
+		if (velocity.y > 0 && !hit && !jumping) {
+			falling = false;
+			jumping = true;
+			stateTime = 0;
+		}
+		else if (velocity.y < 0 && !hit && !falling) {
+			falling = true;
+			jumping = false;
+			stateTime = 0;
+		}
+		else if (velocity.y == 0 && !hit) {
+			falling = false;
+			jumping = false;
+			stateTime = 0;
 		}
 
-		if (velocity.y < 0 && !hit) {
-			if (!falling) {
-				falling = true;
-				jumping = false;
-				stateTime = 0;
-			}
-		}
-
-		if (position.x < 0) position.x = World.WORLD_WIDTH;
-		if (position.x > World.WORLD_WIDTH) position.x = 0;
-
-		stateTime += deltaTime;
+		// if going off the screen negative x, reset x to 0
+		if (position.x < 0)	position.x = 0;
+		// if going off the screen positive x, reset x to world width
+		if (position.x > World.WORLD_WIDTH) position.x = World.WORLD_WIDTH;
+		// only increment stateTime if currently jumping or falling
+		if (jumping || falling) stateTime += deltaTime;
 	}
 	
-	public void hitPlatform () {
+	public void jump() {
 		velocity.y = JUMP_VELOCITY;
 		jumping = true;
 		falling = false;
+		stateTime = 0;
+	}
+	
+	public void fall() {
+		velocity.y = (World.gravity.y * 0.016f); // gravity times estimated deltaTime to match normal fall speed
+		jumping = false;
+		falling = true;
+		stateTime = 0;
+	}
+	
+	public void hitPlatform () {
+		velocity.y = 0;
+		falling = false;
+		jumping = false;
 		stateTime = 0;
 	}
 	
