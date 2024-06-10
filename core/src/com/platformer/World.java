@@ -23,11 +23,11 @@ public class World {
 	public final WorldListener listener;
 	public final Random rand;
 
-	public float heightSoFar;
-	public int score;
-	public boolean worldRunning = false;
-	public boolean gameOver = false;
-	public boolean nextLevel = false;
+	private float heightSoFar;
+	private int score;
+	private boolean worldRunning = false;
+	private boolean gameOver = false;
+	private boolean nextLevel = false;
 
 	public World (WorldListener listener) {
 		this.ava = new Avatar(5, 1);
@@ -44,11 +44,17 @@ public class World {
 	private void generateLevel () {
 		float y = Platform.PLATFORM_HEIGHT / 2;
 		float maxJumpHeight = Avatar.JUMP_VELOCITY * Avatar.JUMP_VELOCITY / (2 * -gravity.y);
+		Platform platform = new Platform(false, (WORLD_WIDTH / 2), y);
+		platforms.add(platform);
+		
+		y += (maxJumpHeight - 0.5f);
+		y -= rand.nextFloat() * (maxJumpHeight / 3);
+		
 		while (y < WORLD_HEIGHT - WORLD_WIDTH / 2) {
-			int type = rand.nextFloat() > 0.8f ? Platform.TYPE_MOVING : Platform.TYPE_STATIC;
+			boolean moving = ( rand.nextFloat() > 0.8f );
 			float x = rand.nextFloat() * (WORLD_WIDTH - Platform.PLATFORM_WIDTH) + Platform.PLATFORM_WIDTH / 2;
 
-			Platform platform = new Platform(type, x, y);
+			platform = new Platform(moving, x, y);
 			platforms.add(platform);
 
 			y += (maxJumpHeight - 0.5f);
@@ -84,7 +90,7 @@ public class World {
 		for (int i = 0; i < length; i++) {
 			Platform platform = platforms.get(i);
 			platform.update(deltaTime);
-			if (platform.state == Platform.STATE_PULVERIZING && platform.stateTime > Platform.PLATFORM_PULVERIZE_TIME) {
+			if (platform.isCrumbling() && platform.stateTime > Platform.PLATFORM_CRUMBLE_TIME) {
 				platforms.remove(platform);
 				length = platforms.size();
 			}
@@ -106,8 +112,8 @@ public class World {
 				ava.hitPlatform();
 				onPlatform = true;
 				
-				// 50% to pulverize platform
-				if (rand.nextFloat() > 0.5f) p.pulverize();
+				// 50% to crumble platform
+				if ((rand.nextFloat() > 0.5f) && !p.isMoving()) p.crumble();
 				
 				break;
 			}
@@ -122,6 +128,25 @@ public class World {
 		if (heightSoFar - 7.5f > ava.position.y) {
 			gameOver = true;
 		}
+	}
+	
+	public void setScore(int score) {
+		this.score = score;
+	}
+	public int getScore() {
+		return score;
+	}
+	
+	public boolean isWorldRunning() {
+		return worldRunning;
+	}
+	
+	public boolean isGameOver() {
+		return gameOver;
+	}
+	
+	public boolean isNextLevel() {
+		return nextLevel;
 	}
 
 }

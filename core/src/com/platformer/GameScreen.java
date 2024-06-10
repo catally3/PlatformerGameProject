@@ -17,6 +17,7 @@ public class GameScreen extends ScreenAdapter {
 	boolean gamePaused = false;
 	boolean levelEnded = false;
 	boolean gameOver = false;
+	
 	OrthographicCamera guiCam;
 	Vector3 touchPoint;
 	World world;
@@ -95,14 +96,14 @@ public class GameScreen extends ScreenAdapter {
 		up = Gdx.input.isKeyPressed(Keys.DPAD_UP) || Gdx.input.isKeyPressed(Keys.SPACE);
 		world.update(deltaTime, accel, up);
 		
-		if (world.score != lastScore) {
-			lastScore = world.score;
+		if (world.getScore() != lastScore) {
+			lastScore = world.getScore();
 			scoreString = "SCORE: " + lastScore;
 		}
-		if (world.nextLevel) {
+		if (world.isNextLevel()) {
 			game.setScreen(new WinScreen(game));
 		}
-		if (world.gameOver) {
+		if (world.isGameOver()) {
 			gameOver = true; gameRunning = false;
 			scoreString = "SCORE: " + lastScore;
 		}
@@ -130,7 +131,7 @@ public class GameScreen extends ScreenAdapter {
 		if (Gdx.input.justTouched()) {
 			world = new World(worldListener);
 			renderer = new WorldRenderer(game.batch, world);
-			world.score = lastScore;
+			world.setScore(lastScore);
 			gameRunning = false; levelEnded = false;
 		}
 	}
