@@ -41,6 +41,11 @@ public class MainMenuScreen extends ScreenAdapter {
 			}
 			if (soundBounds.contains(touchPoint.x, touchPoint.y)) {
 				Assets.playSound(Assets.clickSound);
+				Assets.soundEnabled = !Assets.soundEnabled;
+				if (Assets.soundEnabled)
+					Assets.music.play();
+				else
+					Assets.music.pause();
 			}
 		}
 	}
@@ -61,7 +66,7 @@ public class MainMenuScreen extends ScreenAdapter {
 		game.batch.begin();
 		game.batch.draw(Assets.logo, 160 - 274 / 2, 480 - 10 - 142, 274, 142);
 		game.batch.draw(Assets.mainMenu, 10, 200 - 110 / 2, 300, 110);
-		game.batch.draw(Assets.soundOn, 0, 0, 64, 64);
+		game.batch.draw(Assets.soundEnabled? Assets.soundOn : Assets.soundOff, 0, 0, 64, 64);
 		game.batch.end();	
 	}
 

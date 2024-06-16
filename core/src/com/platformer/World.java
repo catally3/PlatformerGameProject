@@ -2,6 +2,7 @@ package com.platformer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 import com.badlogic.gdx.math.Vector2;
@@ -24,7 +25,7 @@ public class World {
 	public final Random rand;
 
 	private float heightSoFar;
-	private int score;
+	private float score;
 	private boolean worldRunning = false;
 	private boolean gameOver = false;
 	private boolean nextLevel = false;
@@ -44,17 +45,18 @@ public class World {
 	private void generateLevel () {
 		float y = Platform.PLATFORM_HEIGHT / 2;
 		float maxJumpHeight = Avatar.JUMP_VELOCITY * Avatar.JUMP_VELOCITY / (2 * -gravity.y);
-		Platform platform = new Platform(false, (WORLD_WIDTH / 2), y);
+		Platform platform = new Platform(false, false, (WORLD_WIDTH / 2), y);
 		platforms.add(platform);
 		
 		y += (maxJumpHeight - 0.5f);
 		y -= rand.nextFloat() * (maxJumpHeight / 3);
 		
 		while (y < WORLD_HEIGHT - WORLD_WIDTH / 2) {
-			boolean moving = ( rand.nextFloat() > 0.8f );
+			boolean moving = (rand.nextFloat() > 0.8f);
+			boolean crumble = ((rand.nextFloat() > 0.5f) && !moving);
 			float x = rand.nextFloat() * (WORLD_WIDTH - Platform.PLATFORM_WIDTH) + Platform.PLATFORM_WIDTH / 2;
 
-			platform = new Platform(moving, x, y);
+			platform = new Platform(moving, crumble, x, y);
 			platforms.add(platform);
 
 			y += (maxJumpHeight - 0.5f);
@@ -86,14 +88,13 @@ public class World {
 	}
 
 	private void updatePlatforms (float deltaTime) {
-		int length = platforms.size();
-		for (int i = 0; i < length; i++) {
-			Platform platform = platforms.get(i);
-			platform.update(deltaTime);
-			if (platform.isCrumbling() && platform.stateTime > Platform.PLATFORM_CRUMBLE_TIME) {
-				platforms.remove(platform);
-				length = platforms.size();
-			}
+		ListIterator<Platform> iter = platforms.listIterator(); 
+		// using listIterator to allow removal of crumbled platforms while iterating
+		while (iter.hasNext()) {
+			Platform p = iter.next();
+			p.update(deltaTime);
+			if (p.isCrumbling() && p.stateTime > Platform.PLATFORM_CRUMBLE_TIME)
+				iter.remove();
 		}
 	}
 
@@ -111,10 +112,7 @@ public class World {
 			if ((ava.position.y > p.position.y) && ava.bounds.overlaps(p.bounds)) {	
 				ava.hitPlatform();
 				onPlatform = true;
-				
-				// 50% to crumble platform
-				if ((rand.nextFloat() > 0.5f) && !p.isMoving()) p.crumble();
-				
+				p.crumble(); // crumbles platform if it is crumble enabled
 				break;
 			}
 		}
@@ -130,11 +128,9 @@ public class World {
 		}
 	}
 	
-	public void setScore(int score) {
-		this.score = score;
-	}
 	public int getScore() {
-		return score;
+		this.score = Math.max(this.heightSoFar, this.score);
+		return (int) ((Math.floor(this.score)) * 10);
 	}
 	
 	public boolean isWorldRunning() {

@@ -59,17 +59,27 @@ public class WorldRenderer {
 		}
 		float side = world.ava.velocity.x < 0 ? -1 : 1;
 		if (side < 0)
-			batch.draw(keyFrame, world.ava.position.x + 0.5f, world.ava.position.y - 0.5f, side * 1, 1);
+			batch.draw(keyFrame, world.ava.position.x + 0.5f, world.ava.position.y - 0.5f, side, 1);
 		else
-			batch.draw(keyFrame, world.ava.position.x - 0.5f, world.ava.position.y - 0.5f, side * 1, 1);
+			batch.draw(keyFrame, world.ava.position.x - 0.5f, world.ava.position.y - 0.5f, side, 1);
 	}
 
 	private void renderPlatforms () {
-		int len = world.platforms.size();
-		for (int i = 0; i < len; i++) {
-			Platform platform = world.platforms.get(i);
-			TextureRegion keyFrame = Assets.platform;
-			batch.draw(keyFrame, platform.position.x - 1, platform.position.y - 0.25f, 2, 0.5f);
+		for (Platform p : world.platforms) {
+			TextureRegion keyFrame;
+			if (p.isCrumbling()) {
+				if (p.stateTime > (Platform.PLATFORM_CRUMBLE_TIME * 2.0f / 3.0f)) 
+					keyFrame = Assets.platformCrumble2; 
+				else if (p.stateTime > (Platform.PLATFORM_CRUMBLE_TIME / 3.0f))
+					keyFrame = Assets.platformCrumble1;
+				else 
+					keyFrame = Assets.platformCrumble0;
+			}
+			else if (p.canCrumble())
+				keyFrame = Assets.platformCrumble0; // this will be static cracked platform texture
+			else
+				keyFrame = Assets.platform; // default platform texture
+			batch.draw(keyFrame, p.position.x - 1, p.position.y - 0.25f, 2, 0.5f);
 		}
 	}
 }

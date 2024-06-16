@@ -26,8 +26,12 @@ public class Assets {
 	public static TextureRegion avaJump;
 	public static TextureRegion avaFall;
 	public static TextureRegion platform;
+	public static TextureRegion platformCrumble0;
+	public static TextureRegion platformCrumble1;
+	public static TextureRegion platformCrumble2;
 	public static BitmapFont font;
 
+	public static Boolean soundEnabled = true;
 	public static Music music;
 	public static Sound jumpSound;
 	public static Sound hitSound;
@@ -57,6 +61,9 @@ public class Assets {
 		avaJump = new TextureRegion(items, 0, 128, 32, 32); // first frame of jump
 		avaFall = new TextureRegion(items, 64, 128, 32, 32); // first frame of fall
 		platform = new TextureRegion(items, 64, 160, 64, 16);
+		platformCrumble0 = new TextureRegion(items, 64, 176, 64, 16); // first frame of crumble
+		platformCrumble1 = new TextureRegion(items, 64, 192, 64, 16);
+		platformCrumble2 = new TextureRegion(items, 64, 208, 64, 16);
 		
 		font = new BitmapFont(Gdx.files.internal("font.fnt"), Gdx.files.internal("font.png"), false);
 
@@ -70,6 +77,6 @@ public class Assets {
 	}
 
 	public static void playSound (Sound sound) {
-		sound.play(1);
+		if (soundEnabled) sound.play(1);
 	}
 }

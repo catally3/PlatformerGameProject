@@ -4,16 +4,18 @@ public class Platform extends DynamicGameObject {
 
 	public static final float PLATFORM_WIDTH = 1.75f;
 	public static final float PLATFORM_HEIGHT = 0.5f;
-	public static final float PLATFORM_CRUMBLE_TIME = 0.2f * 4;
+	public static final float PLATFORM_CRUMBLE_TIME = 0.2f * 3;
 	public static final float PLATFORM_VELOCITY = 2;
 
 	private boolean moving = false;
+	private boolean crumble = false;
 	private boolean crumbling = false;
 	float stateTime;
 
-	public Platform (boolean moving, float x, float y) {
+	public Platform (boolean moving, boolean crumble, float x, float y) {
 		super(x, y, PLATFORM_WIDTH, PLATFORM_HEIGHT);
 		this.moving = moving;
+		this.crumble = crumble;
 		this.crumbling = false;
 		this.stateTime = 0;
 		if (moving) {
@@ -41,14 +43,20 @@ public class Platform extends DynamicGameObject {
 	}
 
 	public void crumble() {
-		crumbling = true;
-		stateTime = 0;
-		velocity.x = 0;
+		if (crumble && !crumbling) {
+			crumbling = true;
+			stateTime = 0;
+		}
 	}
 	
 	public boolean isMoving() {
 		return moving;
 	}
+	
+	public boolean canCrumble() {
+		return crumble;
+	}
+	
 	public boolean isCrumbling() {
 		return crumbling;
 	}

@@ -131,7 +131,7 @@ public class GameScreen extends ScreenAdapter {
 		if (Gdx.input.justTouched()) {
 			world = new World(worldListener);
 			renderer = new WorldRenderer(game.batch, world);
-			world.setScore(lastScore);
+			//world.setScore(lastScore);
 			gameRunning = false; levelEnded = false;
 		}
 	}
